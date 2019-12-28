@@ -1,0 +1,7 @@
+---
+
+realm: example.com
+users:
+  - name: user
+    password: password
+

@@ -1,0 +1,4 @@
+14d13
+< 	log "github.com/sirupsen/logrus"
+99d97
+< 	log.Println(a.Headers.V().UnauthCode, r.Method, r.URL, r.Referer(), r.UserAgent())
