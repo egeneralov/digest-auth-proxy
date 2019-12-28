@@ -3,36 +3,33 @@ package main
 import (
 	"flag"
 	"fmt"
+	auth "github.com/abbot/go-http-auth"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
-  "os"
-	log "github.com/sirupsen/logrus"
-  auth "github.com/abbot/go-http-auth"
+	"os"
 )
-
 
 var (
-  bind string
-	host string
+	bind           string
+	host           string
 	configFilename string
-	ProxyConfig *Config
-	err error
-	debug = false
+	ProxyConfig    *Config
+	err            error
+	debug          = false
 )
 
-
 func secret(user, realm string) string {
-  if realm != ProxyConfig.Realm {
-    return ""
-  }
+	if realm != ProxyConfig.Realm {
+		return ""
+	}
 	for _, user := range ProxyConfig.Users {
-  	return user.Password
+		return user.Password
 	}
 	return ""
 }
-
 
 func copyHeader(dst, src http.Header) {
 	for k, vs := range src {
@@ -97,7 +94,7 @@ func reverseProxy(w http.ResponseWriter, req *auth.AuthenticatedRequest) {
 
 	resp, err := http.DefaultClient.Do(outReq)
 	if err != nil {
-  	logRequest(500, req, fmt.Sprintf("proxy error: %v", err))
+		logRequest(500, req, fmt.Sprintf("proxy error: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 Internal Server Error"))
 		return
@@ -129,37 +126,35 @@ func reverseProxy(w http.ResponseWriter, req *auth.AuthenticatedRequest) {
 	logRequest(200, req, "")
 }
 
-
 func main() {
 	flag.StringVar(&host, "host", "localhost:8545", "proxy to")
 	flag.StringVar(&bind, "bind", "0.0.0.0:9001", "bind to")
 	flag.BoolVar(&debug, "debug", false, "expose sensetive info")
 	flag.StringVar(&configFilename, "config", "config.yaml", "config.[yaml|json]")
 	flag.Parse()
-	
+
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
-  if debug {
-  	log.SetLevel(log.DebugLevel)
-  } else {
-  	log.SetLevel(log.InfoLevel)
-  }
-  
-  ProxyConfig, err = ParseConfig("config.yaml")
-  if err != nil {
-    log.Fatal(err)
-  }
-  if debug {
-    log.WithFields(log.Fields{
-      "config": ProxyConfig,
-    }).Debug("loaded configuration")
-  } else {
-    log.Info("loaded configuration")
-  }
-  
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
+
+	ProxyConfig, err = ParseConfig("config.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if debug {
+		log.WithFields(log.Fields{
+			"config": ProxyConfig,
+		}).Debug("loaded configuration")
+	} else {
+		log.Info("loaded configuration")
+	}
+
 	authenticator := auth.NewDigestAuthenticator(ProxyConfig.Realm, secret)
 	http.HandleFunc("/", authenticator.Wrap(reverseProxy))
 	log.Infof("listening on %s", bind)
 	log.Fatal(http.ListenAndServe(bind, nil))
 }
-
