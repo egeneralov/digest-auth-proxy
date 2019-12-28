@@ -38,6 +38,19 @@ jobs:
     - name: docker hub logout
       run: docker logout
     
+    - name: prepare helm package
+      run: |
+        export TAG=$(echo $GITHUB_REF | awk -F \/ '{print $3}')
+        sed -i "s/version: .*/version: $TAG/g" .helm/digest-auth-proxy/Chart.yaml
+        sed -i "s/  tag: .*/  tag: $TAG/g" .helm/digest-auth-proxy/values.yaml
+        helm package .helm/digest-auth-proxy
+    
+    - name: save in actions
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: helm-chart
+        path: digest-auth-proxy-*.tgz
+    
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1.0.0
@@ -48,3 +61,14 @@ jobs:
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
+    
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: digest-auth-proxy-*.tgz
+        asset_name: helm-chart
+        asset_content_type: application/x-gzip
