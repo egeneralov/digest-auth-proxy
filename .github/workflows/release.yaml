@@ -43,6 +43,7 @@ jobs:
         export TAG=$(echo $GITHUB_REF | awk -F \/ '{print $3}')
         sed -i "s/version: .*/version: $TAG/g" .helm/digest-auth-proxy/Chart.yaml
         sed -i "s/  tag: .*/  tag: $TAG/g" .helm/digest-auth-proxy/values.yaml
+        helm init --client-only
         helm package .helm/digest-auth-proxy
     
     - name: save in actions
