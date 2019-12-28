@@ -14,9 +14,10 @@ jobs:
       uses: actions/checkout@master
     
     - name: Get dependencies
-      run: |
-        GO111MODULE=on go mod download
-        patch -N -p0 vendor/github.com/abbot/go-http-auth/digest.go -i digest.go.patch
+      run: GO111MODULE=on go mod download
+
+    - name: patch deps
+      run: patch -N -p0 vendor/github.com/abbot/go-http-auth/digest.go -i digest.go.patch
     
     - name: Set up Docker Buildx
       id: buildx
